@@ -7,7 +7,9 @@ authors = [
     { name = "hhagerm", email = "hagermaxmilian@gmail.com" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "python-dotenv>=1.2.4",
+]
 
 [project.scripts]
 hiking-app = "hiking_app:main"
