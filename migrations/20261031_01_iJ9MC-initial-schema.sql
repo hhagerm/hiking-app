@@ -1,3 +1,6 @@
+-- initial schema
+-- depends: 
+
 CREATE TABLE IF NOT EXISTS pois (
     osm_type CHAR(1) NOT NULL,
     osm_id   BIGINT  NOT NULL,
