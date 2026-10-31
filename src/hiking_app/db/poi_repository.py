@@ -15,7 +15,7 @@ SELECT
         ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography
     ) AS distance_m
 FROM pois
-WHERE kind = 'peak'
+WHERE kind = 'peak' AND name IS NOT NULL
   AND ST_DWithin(
         geom::geography,
         ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
