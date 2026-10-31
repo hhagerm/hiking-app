@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 import asyncpg
 from fastapi import Depends, FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from hiking_app.config import PG_DB_URL
 from hiking_app.db.poi_repository import POIRepository
@@ -19,7 +20,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
-
 async def get_poi_repo():
     async with app.state.pool.acquire() as conn:
         yield POIRepository(conn)
@@ -35,3 +35,5 @@ async def peaks_nearby(
     ) -> list[PeakDistance]:
     result = await repo.peaks_within_radius(lat, lon, radius_m, limit)
     return result
+
+app.mount("/", StaticFiles(directory="static", html=True), name="static")

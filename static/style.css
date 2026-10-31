@@ -1,0 +1,25 @@
+body {
+    font-family: system-ui, sans-serif;
+    margin: 2rem auto;
+    max-width: 40rem;
+    padding: 0 1rem;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th,
+td {
+    border-bottom: 1px solid #ddd;
+    padding: 0.4rem 0.6rem;
+    text-align: left;
+}
+
+td:nth-child(2),
+td:nth-child(3),
+th:nth-child(2),
+th:nth-child(3) {
+    text-align: right;
+}
