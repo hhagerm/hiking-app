@@ -1,0 +1,1 @@
+ALTER TABLE pois ALTER COLUMN ele TYPE real;
