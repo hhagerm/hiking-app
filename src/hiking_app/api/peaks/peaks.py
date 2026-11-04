@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query
 
 from hiking_app.db import POIRepository
 from hiking_app.models import PeakDistance
@@ -11,11 +13,10 @@ peaks_router = APIRouter()
     summary="Get Peaks within radius",
 )
 async def peaks_nearby(
-    lat: float, 
-    lon: float, 
-    radius_m: int = 5000, 
-    limit: int = 50, 
-    repo: POIRepository = Depends(get_poi_repo)
+    lat: Annotated[float, Query(ge=-90, le=90)],
+    lon: Annotated[float, Query(ge=-180, le=180)],
+    radius_m: Annotated[int, Query(gt=0, le=50_000)] = 5000,
+    limit: Annotated[int, Query(gt=0, le=200)] = 50,
+    repo: POIRepository = Depends(get_poi_repo),
     ) -> list[PeakDistance]:
-    result = await repo.peaks_within_radius(lat, lon, radius_m, limit)
-    return result
+    return await repo.peaks_within_radius(lat, lon, radius_m, limit)
