@@ -1,39 +1,12 @@
-from contextlib import asynccontextmanager
+import uvicorn
 
-import asyncpg
-from fastapi import Depends, FastAPI
-from fastapi.staticfiles import StaticFiles
+def main() -> None:
+    uvicorn.run(
+        app="hiking_app:app",
+        host="127.0.0.1",
+        port=8000,
+        workers=1,
+    )
 
-from hiking_app.config import PG_DB_URL
-from hiking_app.db.poi_repository import POIRepository
-from hiking_app.models import PeakDistance
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    app.state.pool = await asyncpg.create_pool(PG_DB_URL)
-    try:
-        yield
-    finally:
-        await app.state.pool.close()
-
-
-app = FastAPI(lifespan=lifespan)
-
-
-async def get_poi_repo():
-    async with app.state.pool.acquire() as conn:
-        yield POIRepository(conn)
-    
-
-@app.get("/peaks/nearby")
-async def peaks_nearby(
-    lat: float, 
-    lon: float, 
-    radius_m: int = 5000, 
-    limit: int = 50, 
-    repo: POIRepository = Depends(get_poi_repo)
-    ) -> list[PeakDistance]:
-    result = await repo.peaks_within_radius(lat, lon, radius_m, limit)
-    return result
-
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+if __name__ == "__main__":
+    main()

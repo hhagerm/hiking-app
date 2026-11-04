@@ -4,9 +4,10 @@ import asyncio
 
 import asyncpg
 
-from hiking_app.config import PG_DB_URL
+from hiking_app.core.config import PG_DB_URL
 
-DATA_FILE = Path("data/peaks.json")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DATA_FILE = PROJECT_ROOT / "data" / "peaks.json"
 
 SQL = """
 INSERT INTO pois (osm_type, osm_id, kind, name, ele, tags, geom)
