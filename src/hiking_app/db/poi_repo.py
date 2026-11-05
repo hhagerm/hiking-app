@@ -29,8 +29,6 @@ class POIRepository:
     def __init__(self, conn: asyncpg.Connection) -> None:
         self.conn = conn
     
-    
-    
     async def peaks_within_radius(
         self,
         lat: float, 

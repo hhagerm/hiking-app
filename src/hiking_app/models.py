@@ -1,3 +1,4 @@
+from datetime import datetime
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
@@ -12,3 +13,12 @@ class Peak:
 @dataclass(frozen=True)
 class PeakDistance(Peak):
     distance_m: float
+    
+
+# models.py
+@dataclass(frozen=True)
+class User:
+    id: int
+    username: str
+    email: str
+    create_ts: datetime

@@ -1,3 +1,7 @@
-from .poi_repository import POIRepository
+from .poi_repo import POIRepository
+from .user_repo import UserRepository
 
-__all__ = ["POIRepository"]
+__all__ = [
+    "POIRepository", 
+    "UserRepository",
+]

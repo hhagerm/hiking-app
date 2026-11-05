@@ -1,6 +1,6 @@
 from fastapi import Request, Depends
 
-from hiking_app.db.poi_repository import POIRepository
+from hiking_app.db import POIRepository, UserRepository
 
 async def get_conn(request: Request):
     async with request.app.state.pool.acquire() as conn:
@@ -8,3 +8,6 @@ async def get_conn(request: Request):
 
 async def get_poi_repo(conn=Depends(get_conn)) -> POIRepository:
     return POIRepository(conn)
+
+async def get_user_repo(conn=Depends(get_conn)) -> UserRepository:
+    return UserRepository(conn)
