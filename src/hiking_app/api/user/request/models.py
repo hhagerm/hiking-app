@@ -5,3 +5,7 @@ class RegisterUserRequest(BaseModel):
     username: str
     password1: str
     password2: str
+    
+class LoginUserRequest(BaseModel):
+    username: str
+    password: str

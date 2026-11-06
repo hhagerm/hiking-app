@@ -1,14 +1,19 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
+from fastapi.security import APIKeyCookie
 
-from hiking_app.db import UserRepository
-from hiking_app.core.dependencies import get_user_repo
+from hiking_app.core.dependencies import get_user_service
+from hiking_app.core.auth import SESSION_TTL
 from hiking_app.service import UserService
 from hiking_app.models import User
-from .request import RegisterUserRequest
-from .response import RegisterUserResponse
+from .request import RegisterUserRequest, LoginUserRequest
+from .response import RegisterUserResponse, UserResponse
 
 
 user_router = APIRouter()
+
+
+session_cookie = APIKeyCookie(name="session", auto_error=False)
+
 
 @user_router.post(
     "/register",
@@ -18,6 +23,28 @@ user_router = APIRouter()
 )
 async def register_user(
     req: RegisterUserRequest,
-    repo: UserRepository = Depends(get_user_repo)
+    svc: UserService = Depends(get_user_service),
     ) -> User:
-    return await UserService(repo).register_account(**req.model_dump())
+    return await svc.register_account(**req.model_dump())
+
+
+@user_router.post(
+    "/login",
+    response_model=UserResponse,
+    summary="Login user"
+)
+async def login_user(
+    req: LoginUserRequest,
+    response: Response,
+    svc: UserService = Depends(get_user_service),
+    ):
+    user, token = await svc.login_user(**req.model_dump())
+    response.set_cookie(
+        "session", token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=int(SESSION_TTL.total_seconds()),
+        path="/",
+    )
+    return user

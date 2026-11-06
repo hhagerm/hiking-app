@@ -1,11 +1,17 @@
+import secrets
+
 from email_validator import validate_email, EmailNotValidError
 from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
 
-from hiking_app.db import UserRepository
-from hiking_app.core.exceptions import ValidationFailed, EmailTaken, UsernameTaken
+from hiking_app.db import UserRepository, SessionRepository
+from hiking_app.models import User
+from hiking_app.core.exceptions import ValidationFailed, EmailTaken, UsernameTaken, InvalidCredentials
+from hiking_app.core.auth import new_session_token
 
 SPECIAL = "!@#$%^&*()-_=+[]{};:'\",.<>/?\\|`~"
 ph = PasswordHasher()
+DUMMY_HASH = ph.hash(secrets.token_urlsafe(32))
 
 def _validate_password(password: str):
     if not 8 <= len(password) <= 64:
@@ -21,8 +27,9 @@ def _validate_password(password: str):
     
 
 class UserService():
-    def __init__(self, user_repo: UserRepository) -> None:
+    def __init__(self, user_repo: UserRepository, session_repo: SessionRepository) -> None:
         self.user_repo = user_repo
+        self.session_repo = session_repo
         
     async def register_account(
         self, 
@@ -52,4 +59,25 @@ class UserService():
             raise ValidationFailed("email", "email already taken")
         except UsernameTaken:
             raise ValidationFailed("username", "username already taken")
-        
+    
+    async def login_user(
+        self, 
+        username: str, 
+        password: str
+        ) -> tuple[User, str]:
+        user = await self.user_repo.get_user(username)
+        password_hash = (
+            await self.user_repo.get_password_hash(username) if user else DUMMY_HASH
+        )
+
+        try:
+            ph.verify(password_hash, password)
+        except VerifyMismatchError:
+            raise InvalidCredentials
+
+        if user is None:
+            raise InvalidCredentials
+
+        raw, token_hash, expires_ts = new_session_token()
+        await self.session_repo.add_session(token_hash, user.id, expires_ts)
+        return user, raw

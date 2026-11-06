@@ -5,7 +5,10 @@ class ValidationFailed(Exception):
         self.field = field
         self.message = message
         super().__init__(f"{field}: {message}")
-        
+
+class InvalidCredentials(Exception):
+    pass
+
 # repos
 class EmailTaken(Exception):
     pass

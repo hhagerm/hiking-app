@@ -12,6 +12,18 @@ INSERT INTO users (
 RETURNING id, username, email, create_ts
 """
 
+GET_USER_SQL = """
+SELECT id, username, email, create_ts
+FROM users
+WHERE lower(username) = lower($1)
+"""
+
+GET_PASSWORD_HASH_SQL = """
+SELECT password_hash
+FROM users
+WHERE lower(username) = lower($1)
+"""
+
 class UserRepository:
     def __init__(self, conn: asyncpg.Connection) -> None:
         self.conn = conn
@@ -21,7 +33,7 @@ class UserRepository:
         email: str,  
         username: str, 
         password_hash: str,
-        ):
+        ) -> User:
         try:
             result = await self.conn.fetchrow(
                 ADD_USER_SQL, 
@@ -41,3 +53,32 @@ class UserRepository:
             email=result["email"],
             create_ts=result["create_ts"]
         )
+    
+    async def get_user(
+        self,
+        username: str
+    ) -> User | None:
+        result = await self.conn.fetchrow(
+            GET_USER_SQL,
+            username
+        )
+        if result is None:
+            return None
+        return User(
+            id=result["id"],
+            username=result["username"],
+            email=result["email"],
+            create_ts=result["create_ts"]
+        )
+    
+    async def get_password_hash(
+        self,
+        username: str
+    ) -> str | None:
+        result = await self.conn.fetchrow(
+            GET_PASSWORD_HASH_SQL,
+            username
+        )
+        if result is None:
+            return None
+        return result["password_hash"]

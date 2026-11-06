@@ -1,6 +1,7 @@
-from .models import RegisterUserRequest
+from .models import RegisterUserRequest, LoginUserRequest
 
 
 __all__ = [
     "RegisterUserRequest",
+    "LoginUserRequest",
 ]
