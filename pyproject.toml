@@ -36,3 +36,4 @@ select = [
     # Pyflakes
     "F",
 ]
+ignore = ["E501"]
