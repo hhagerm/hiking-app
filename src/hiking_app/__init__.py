@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from hiking_app.core.config import PG_DB_URL
 from hiking_app.api import router
-from hiking_app.core.exceptions import ValidationFailed, InvalidCredentials
+from hiking_app.core.exceptions import ValidationFailed, InvalidCredentials, NotAuthenticated
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -27,6 +27,15 @@ def create_app() -> FastAPI:
         return JSONResponse(
             status_code=422,
             content={"errors": [{"field": exc.field, "message": exc.message}]},
+        )
+        
+    @app.exception_handler(NotAuthenticated)
+    async def validation_failed_handler(
+        request: Request, exc: NotAuthenticated
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=401,
+            content={"errors": [{"field": None, "message": "not authenticated"}]},
         )
     
     @app.exception_handler(InvalidCredentials)

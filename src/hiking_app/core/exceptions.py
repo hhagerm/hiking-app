@@ -1,3 +1,5 @@
+class NotAuthenticated(Exception):
+    pass
 
 # service
 class ValidationFailed(Exception):
