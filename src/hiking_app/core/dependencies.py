@@ -4,7 +4,7 @@ from fastapi.security import APIKeyCookie
 from hiking_app.core.auth import hash_token
 from hiking_app.models import User
 from hiking_app.core.exceptions import NotAuthenticated
-from hiking_app.db import POIRepository, UserRepository, SessionRepository
+from hiking_app.db import POIRepository, UserRepository, SessionRepository, CollectionRepository
 from hiking_app.service import UserService
 
 session_cookie = APIKeyCookie(name="session", auto_error=False)
@@ -38,3 +38,6 @@ async def get_current_user(
     if user is None:
         raise NotAuthenticated
     return user
+
+async def get_collection_repo(conn=Depends(get_conn)) -> CollectionRepository:
+    return CollectionRepository(conn)

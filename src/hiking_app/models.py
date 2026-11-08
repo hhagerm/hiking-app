@@ -14,11 +14,13 @@ class Peak:
 class PeakDistance(Peak):
     distance_m: float
     
-
-# models.py
 @dataclass(frozen=True)
 class User:
     id: int
     username: str
     email: str
     create_ts: datetime
+    
+@dataclass(frozen=True)
+class CollectedPeak(Peak):
+    collect_ts: datetime

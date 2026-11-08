@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from hiking_app.core.config import PG_DB_URL
 from hiking_app.api import router
-from hiking_app.core.exceptions import ValidationFailed, InvalidCredentials, NotAuthenticated
+from hiking_app.core.exceptions import ValidationFailed, InvalidCredentials, NotAuthenticated, POINotFound
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,7 +30,7 @@ def create_app() -> FastAPI:
         )
         
     @app.exception_handler(NotAuthenticated)
-    async def validation_failed_handler(
+    async def not_authenticated_handler(
         request: Request, exc: NotAuthenticated
     ) -> JSONResponse:
         return JSONResponse(
@@ -47,6 +47,16 @@ def create_app() -> FastAPI:
             content={"errors": [{"field": None, "message": "incorrect username or password"}]},
             headers={"WWW-Authenticate": "Bearer"},
         )
+        
+    @app.exception_handler(POINotFound)
+    async def poi_not_found_handler(
+        request: Request, exc: POINotFound
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=404,
+            content={"errors": [{"field": None, "message": "poi not found"}]},
+        )
+        
     app.include_router(router)
     app.mount("/", StaticFiles(directory="static", html=True), name="static")
     

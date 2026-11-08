@@ -16,3 +16,6 @@ class EmailTaken(Exception):
     pass
 class UsernameTaken(Exception):
     pass
+
+class POINotFound(Exception):
+    pass

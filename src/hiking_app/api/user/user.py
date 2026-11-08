@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Response
 from fastapi.security import APIKeyCookie
 
-from hiking_app.core.dependencies import get_user_service
+from hiking_app.core.dependencies import get_user_service, get_current_user
 from hiking_app.core.auth import SESSION_TTL
 from hiking_app.service import UserService
 from hiking_app.models import User
@@ -47,4 +47,14 @@ async def login_user(
         max_age=int(SESSION_TTL.total_seconds()),
         path="/",
     )
+    return user
+
+@user_router.get(
+    "/me",
+    response_model=UserResponse,
+    summary="Get current user info"
+)
+async def get_me(
+    user: User = Depends(get_current_user),
+    ):
     return user
