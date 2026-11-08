@@ -262,3 +262,65 @@ button.claim.claimed {
     font-size: 0.85rem;
     margin: 0;
 }
+
+/* ---------- map ---------- */
+
+.map {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    height: 55vh;
+    min-height: 20rem;
+    margin: 0 0 1rem;
+    width: 100%;
+    z-index: 0;                 /* keep Leaflet panes under our own UI */
+}
+
+/* The pin shape sits on the inner <i>: Leaflet writes its own transform onto
+   the icon element to position it, so a transform here would be overwritten. */
+.peak-pin i {
+    background: #fff;
+    border: 2px solid var(--accent);
+    border-radius: 50% 50% 50% 0;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.45);
+    display: block;
+    height: 16px;
+    transform: rotate(-45deg);
+    width: 16px;
+}
+
+.peak-pin.claimed i {
+    background: var(--accent);
+}
+
+.peak-pin:hover i {
+    border-color: var(--fg);
+}
+
+.peak-popup strong {
+    display: block;
+    font-size: 1rem;
+}
+
+.peak-popup p {
+    font-size: 0.85rem;
+    margin: 0.15rem 0 0.6rem;
+}
+
+.peak-popup button.claim {
+    width: 100%;
+}
+
+/* Peak names in the list: look like links, act as buttons that pan the map. */
+button.link {
+    background: none;
+    border: none;
+    color: var(--fg);
+    padding: 0;
+    text-align: left;
+    text-decoration: underline;
+    text-decoration-color: var(--line);
+}
+
+button.link:hover {
+    text-decoration-color: var(--accent);
+}

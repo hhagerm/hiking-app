@@ -38,3 +38,18 @@ export function resolveLocation() {
     if (!pending) pending = resolve();
     return pending;
 }
+
+// Great-circle distance in metres between two {lat, lon} points (haversine).
+// The map list needs "how far is this peak from me", and /peaks/nearby's
+// distance_m is measured from whatever centre we happened to fetch around.
+export function distanceM(a, b) {
+    const R = 6371008.8;                 // mean Earth radius, metres
+    const toRad = (deg) => (deg * Math.PI) / 180;
+
+    const dLat = toRad(b.lat - a.lat);
+    const dLon = toRad(b.lon - a.lon);
+    const h = Math.sin(dLat / 2) ** 2 +
+              Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) *
+              Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+}
