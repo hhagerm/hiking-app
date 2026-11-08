@@ -3,28 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nearby peaks</title>
+    <title>Peaks</title>
     <link rel="stylesheet" href="style.css">
     <script src="app.js" type="module"></script>
 </head>
 <body>
-    <h1>Nearby peaks</h1>
-    <p id="origin"></p>
-    <form id="controls">
-        <label for="radius">Max distance (m)</label>
-        <input type="number" id="radius" name="radius" value="5000" min="100" step="100" required>
-        <button type="submit">Search</button>
-    </form>
-    <p id="status">Loading...</p>
-    <table id="peaks" hidden>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Elevation</th>
-                <th>Distance</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+    <header class="navbar">
+        <span class="brand">Peaks</span>
+        <nav class="nav-main">
+            <a href="#/find" data-nav="#/find">Find</a>
+        </nav>
+        <div class="auth-slot" id="auth-slot"></div>
+    </header>
+    <main id="view"></main>
 </body>
 </html>

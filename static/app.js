@@ -1,89 +1,63 @@
-// Used when the browser won't give us a position (denied, unavailable, no HTTPS).
-const FALLBACK = { lat: 50.4575, lon: 14.3701 };
+// Bootstrap: wire routes, keep the navbar in sync with the session, start.
 
-function getBrowserPosition() {
-    // getCurrentPosition is callback-based; wrap it so we can await it.
-    return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) {
-            reject(new Error("geolocation unsupported"));
-            return;
-        }
-        navigator.geolocation.getCurrentPosition(
-            (position) => resolve({
-                lat: position.coords.latitude,
-                lon: position.coords.longitude,
-            }),
-            (error) => reject(new Error(error.message)),
-            { timeout: 10000 },
-        );
-    });
+import { router } from "./router.js";
+import * as session from "./session.js";
+import * as find from "./views/find.js";
+import * as profile from "./views/profile.js";
+import * as auth from "./views/auth.js";
+
+const view = document.getElementById("view");
+const authSlot = document.getElementById("auth-slot");
+
+function navLink(href, text) {
+    const link = document.createElement("a");
+    link.href = href;
+    link.textContent = text;
+    link.dataset.nav = href;
+    if (window.location.hash === href) link.setAttribute("aria-current", "page");
+    return link;
 }
 
-async function resolveLocation() {
-    const origin = document.getElementById("origin");
-    origin.textContent = "Asking your browser for your location...";
+function renderAuthSlot(user) {
+    authSlot.replaceChildren();
 
-    try {
-        const position = await getBrowserPosition();
-        origin.textContent = `Your location: ${position.lat.toFixed(4)}, ${position.lon.toFixed(4)}`;
-        return position;
-    } catch (error) {
-        origin.textContent =
-            `Couldn't get your location (${error.message}) - using ` +
-            `${FALLBACK.lat}, ${FALLBACK.lon}.`;
-        return FALLBACK;
+    if (!user) {
+        authSlot.append(navLink("#/login", "Log in"),
+                        navLink("#/register", "Register"));
+        return;
     }
-}
 
-async function loadPeaks(userLocation, radiusM) {
-    const status = document.getElementById("status");
-    const table = document.getElementById("peaks");
-    const tbody = table.querySelector("tbody");
-
-    tbody.replaceChildren();
-    table.hidden = true;
-    status.textContent = "Loading...";
-
-    const params = new URLSearchParams({
-        lat: userLocation.lat,
-        lon: userLocation.lon,
-        radius_m: radiusM,
+    const logout = document.createElement("button");
+    logout.type = "button";
+    logout.className = "logout";
+    logout.textContent = "Log out";
+    logout.addEventListener("click", async () => {
+        logout.disabled = true;
+        try {
+            await session.logout();
+        } finally {
+            logout.disabled = false;
+            router.navigate("#/find");
+        }
     });
 
-    try {
-        const response = await fetch(`/peaks/nearby?${params}`);
-        if (!response.ok) {
-            throw new Error(`${response.status} ${response.statusText}`);
-        }
-        const peaks = await response.json();
-
-        if (peaks.length === 0) {
-            status.textContent = `No peaks within ${radiusM} m.`;
-            return;
-        }
-
-        for (const peak of peaks) {
-            const row = tbody.insertRow();
-            row.insertCell().textContent = peak.name ?? "(unnamed)";
-            row.insertCell().textContent = peak.ele_m === null ? "-" : `${peak.ele_m} m`;
-            row.insertCell().textContent = `${Math.round(peak.distance_m)} m`;
-        }
-
-        status.textContent = `${peaks.length} peaks within ${radiusM} m.`;
-        table.hidden = false;
-    } catch (error) {
-        status.textContent = `Failed to load peaks: ${error.message}`;
-    }
+    authSlot.append(navLink("#/profile", user.username), logout);
 }
 
-const radiusInput = document.getElementById("radius");
+session.onChange(renderAuthSlot);
 
-// Resolved once on load and reused, so changing the radius doesn't re-prompt.
-const userLocation = await resolveLocation();
+router.add("#/find", find.render);
+router.add("#/profile", profile.render);
+router.add("#/login", auth.renderLogin);
+router.add("#/register", auth.renderRegister);
+router.setFallback("#/find");
 
-document.getElementById("controls").addEventListener("submit", (event) => {
-    event.preventDefault();
-    loadPeaks(userLocation, radiusInput.valueAsNumber);
-});
+// Resolve auth state before the first render so views know who is looking.
+try {
+    await session.refresh();
+} catch (error) {
+    console.error("could not determine session state", error);
+}
 
-loadPeaks(userLocation, radiusInput.valueAsNumber);
+renderAuthSlot(session.getUser());
+await router.start(view);
