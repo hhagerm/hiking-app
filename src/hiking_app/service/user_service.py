@@ -72,8 +72,8 @@ class UserService():
 
         try:
             ph.verify(password_hash, password)
-        except VerifyMismatchError:
-            raise InvalidCredentials
+        except VerifyMismatchError as e:
+            raise InvalidCredentials from e
 
         if user is None:
             raise InvalidCredentials

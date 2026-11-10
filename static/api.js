@@ -2,11 +2,16 @@
 // change to a URL or payload shape is a change to this file only.
 
 export class ApiError extends Error {
-    constructor(status, fieldErrors, message) {
+    constructor(status, fieldErrors, message, code = null) {
         super(message || `request failed with ${status}`);
         this.name = "ApiError";
         this.status = status;
         this.fieldErrors = fieldErrors;
+        // Stable machine-readable identifier from the backend, e.g.
+        // "poi_not_found". Null when the response had no error envelope
+        // (network failure, static 404, bare 500). Branch on this rather
+        // than on status or message text.
+        this.code = code;
     }
 
     // Convenience for forms: the message for a field, if any.
@@ -15,19 +20,27 @@ export class ApiError extends Error {
     }
 }
 
-// The backend speaks two error shapes:
-//   our handlers      -> {"errors": [{"field": "email", "message": "..."}]}
-//   FastAPI validation-> {"detail": [{"loc": ["query", "osm_id"], "msg": "..."}]}
-// Normalize both to {field: message}. A null/absent field becomes "_".
-function parseErrors(payload) {
+// Our handlers speak one shape:
+//   {"error": {"code": "validation_failed", "message": "...", "field": "email"}}
+// FastAPI's own request validation still emits {"detail": [...]} (the backend
+// does not remap it yet), and an unmatched path falls through to the static
+// mount and returns HTML, which parses to nothing. All three are normalized to
+// {code, message, fieldErrors}, where fieldErrors maps a field name to its
+// message and a missing field becomes "_".
+function parseError(payload) {
     const fieldErrors = {};
-    if (!payload || typeof payload !== "object") return fieldErrors;
+    if (!payload || typeof payload !== "object") {
+        return { code: null, message: null, fieldErrors };
+    }
 
-    if (Array.isArray(payload.errors)) {
-        for (const e of payload.errors) {
-            fieldErrors[e.field ?? "_"] = e.message ?? "invalid";
-        }
-    } else if (Array.isArray(payload.detail)) {
+    const error = payload.error;
+    if (error && typeof error === "object") {
+        const message = error.message ?? "invalid";
+        fieldErrors[error.field ?? "_"] = message;
+        return { code: error.code ?? null, message, fieldErrors };
+    }
+
+    if (Array.isArray(payload.detail)) {
         for (const e of payload.detail) {
             const loc = Array.isArray(e.loc) ? e.loc[e.loc.length - 1] : "_";
             fieldErrors[loc ?? "_"] = e.msg ?? "invalid";
@@ -35,7 +48,7 @@ function parseErrors(payload) {
     } else if (typeof payload.detail === "string") {
         fieldErrors._ = payload.detail;
     }
-    return fieldErrors;
+    return { code: null, message: null, fieldErrors };
 }
 
 async function request(method, path, { body, query } = {}) {
@@ -68,10 +81,11 @@ async function request(method, path, { body, query } = {}) {
     }
 
     if (!response.ok) {
-        const fieldErrors = parseErrors(payload);
+        const { code, message, fieldErrors } = parseError(payload);
         const first = Object.values(fieldErrors)[0];
         throw new ApiError(response.status, fieldErrors,
-                           first || `${response.status} ${response.statusText}`);
+                           message || first || `${response.status} ${response.statusText}`,
+                           code);
     }
     return payload;
 }
