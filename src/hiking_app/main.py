@@ -2,7 +2,7 @@ import uvicorn
 
 def main() -> None:
     uvicorn.run(
-        app="hiking_app:app",
+        app="hiking_app.app:app",
         host="127.0.0.1",
         port=8000,
         workers=1,
