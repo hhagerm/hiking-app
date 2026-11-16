@@ -1,9 +1,13 @@
+from datetime import datetime, timezone
+
 import pytest
 from unittest.mock import AsyncMock
 from argon2 import PasswordHasher
 
+from hiking_app.core.auth import hash_token
 from hiking_app.service import UserService
-from hiking_app.core.exceptions import ValidationFailed, EmailTaken, UsernameTaken
+from hiking_app.core.exceptions import ValidationFailed, EmailTaken, UsernameTaken, InvalidCredentials
+from hiking_app.models import User
 
 def valid_registration() -> dict:
     return {
@@ -13,6 +17,15 @@ def valid_registration() -> dict:
         "password2": "Str0ng!pass",
     }
 
+
+PASSWORD = "Str0ng!pass"
+PASSWORD_HASH = PasswordHasher().hash(PASSWORD)
+USER = User(
+    id=7,
+    username="hiker",
+    email="mail@example.com",
+    create_ts=datetime.now(timezone.utc),
+)
 
 async def test_register_account_stores_hashed_password():
     user_repo = AsyncMock()
@@ -111,3 +124,46 @@ async def test_register_rejects_taken_username_or_email(exception, field, messag
     assert exc_info.value.field == field
     assert exc_info.value.message == message
     user_repo.add_user.assert_awaited()
+    
+async def test_login_returns_user_and_stores_hashed_token():
+    user_repo = AsyncMock()
+    user_repo.get_user.return_value = USER
+    user_repo.get_password_hash.return_value = PASSWORD_HASH
+    session_repo = AsyncMock()
+    service = UserService(user_repo, session_repo)
+
+    user, raw = await service.login_user("hiker", PASSWORD)
+
+    assert user is USER
+
+    token_hash, user_id, expires_ts = session_repo.add_session.await_args.args
+    assert token_hash == hash_token(raw)
+    assert user_id == 7
+    assert expires_ts > datetime.now(timezone.utc)
+    
+async def test_login_rejects_invalid_credentials():
+    user_repo = AsyncMock()
+    user_repo.get_user.return_value = None
+    user_repo.get_password_hash.return_value = PASSWORD_HASH
+    session_repo = AsyncMock()
+    service = UserService(user_repo, session_repo)
+    
+    with pytest.raises(InvalidCredentials):
+        await service.login_user("ghost", PASSWORD)
+
+    user_repo.get_password_hash.assert_not_awaited()
+    session_repo.add_session.assert_not_awaited()
+    
+
+async def test_login_rejects_invalid_password():
+    user_repo = AsyncMock()
+    user_repo.get_user.return_value = USER
+    user_repo.get_password_hash.return_value = PASSWORD_HASH
+    session_repo = AsyncMock()
+    service = UserService(user_repo, session_repo)
+
+    with pytest.raises(InvalidCredentials):
+        await service.login_user("hiker", "1nVal!dPassword")
+
+    user_repo.get_password_hash.assert_awaited_once()
+    session_repo.add_session.assert_not_awaited()
