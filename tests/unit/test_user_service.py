@@ -9,23 +9,25 @@ from hiking_app.service import UserService
 from hiking_app.core.exceptions import ValidationFailed, EmailTaken, UsernameTaken, InvalidCredentials
 from hiking_app.models import User
 
+PASSWORD = "Str0ng!pass"
+PASSWORD_HASH = PasswordHasher().hash(PASSWORD)
+USERNAME = "hiker"
+
+USER = User(
+    id=7,
+    username=USERNAME,
+    email="mail@example.com",
+    create_ts=datetime(2026, 1, 1, tzinfo=timezone.utc),
+)
+
+
 def valid_registration() -> dict:
     return {
         "email": "MAIL@example.com",
-        "username": "hiker",
-        "password1": "Str0ng!pass",
-        "password2": "Str0ng!pass",
+        "username": USERNAME,
+        "password1": PASSWORD,
+        "password2": PASSWORD,
     }
-
-
-PASSWORD = "Str0ng!pass"
-PASSWORD_HASH = PasswordHasher().hash(PASSWORD)
-USER = User(
-    id=7,
-    username="hiker",
-    email="mail@example.com",
-    create_ts=datetime.now(timezone.utc),
-)
 
 async def test_register_account_stores_hashed_password():
     user_repo = AsyncMock()
